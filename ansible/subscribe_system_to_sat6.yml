@@ -1,0 +1,83 @@
+---
+- hosts: all
+  vars_files:
+    - ./vars.yml
+
+  tasks:
+  - name: Ensure Subscription Manager is installed
+    yum:
+     state: present
+     name: subscription-manager
+
+  - name: Unregister from old Satellite 6 (May fail if registred to Sat5)
+    redhat_subscription:
+      state: absent
+    ignore_errors: yes
+
+  - name: Remove old Katello config and certs
+    shell: "yum -y remove katello-ca-consumer*"
+
+  - name: Disable RHN yum Plugin
+    lineinfile:
+      path: /etc/yum/pluginconf.d/rhnplugin.conf
+      regexp: '^enabled'
+      line: 'enabled=0'
+
+  - name: Check if /etc/sysconfig/rhn/systemid exists
+    stat:
+      path: /etc/sysconfig/rhn/systemid
+    register: stat_result
+
+  - name: Backup /etc/sysconfig/rhn/systemid
+    copy: 
+      remote_src=True 
+      src=/etc/sysconfig/rhn/systemid
+      dest=/etc/sysconfig/rhn/systemid.backup
+    when: stat_result.stat.exists == True
+
+  - name: Move /etc/sysconfig/rhn/systemid
+    file:
+      path: /etc/sysconfig/rhn/systemid
+      state: absent
+
+  - name: remove proxy entry from /etc/yum.conf
+    lineinfile:
+      path: /etc/yum.conf
+      state: absent
+      # regexp: '^proxy=http://proxy.example.com:3128'
+      regexp: '^proxy=http://proxy.example.com:3128'
+
+  - name: Install new Katello Config and Cert RPM
+    yum:
+      state: present
+      disable_gpg_check: yes
+      name: http://{{ capsule }}/pub/katello-ca-consumer-latest.noarch.rpm
+
+  - name: Register the machines to RHSM
+    ignore_errors: yes
+    redhat_subscription:
+      state: present
+      activationkey: '{{ activationkey }}'
+      org_id: '{{ organization }}'
+      auto_attach: true
+
+  - name: Register the machines to RHSM via shell - step auto-attach
+    shell: subscription-manager attach --auto
+
+  - name: Cleanup Yum cache
+    shell: yum clean all
+
+  - name: Remove obsolete Yum Cache Directory
+    file:
+      path: /var/cache/yum
+      state: absent
+
+#  - name: Install Custom GPG Key
+#    rpm_key:
+#      state: present
+#      key: http://sat6.example.com/pub/RPM-GPG-KEY-example
+
+  - name: Install Katello Agent
+    yum:
+      state: latest
+      name: katello-agent
