@@ -13,5 +13,5 @@ You can set the variables for capsule, which can be the Satellite itself or an a
 
 i.e.
 ```
-ansible-playbook -i inventory -u root -k subscribe_system_to_sat6.yml --extra-vars "capsule=capsule.example.com"
+ansible-playbook -i inventory -u root -k subscribe_system_to_sat6.yml --extra-vars "capsule=capsule.example.com activationkey=rhel7-test"
 ```
