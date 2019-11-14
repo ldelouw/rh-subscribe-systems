@@ -15,7 +15,8 @@
     ignore_errors: yes
 
   - name: Remove old Katello config and certs
-    shell: "yum -y remove katello-ca-consumer*"
+    shell: "rpm -e katello-ca-consumer*"
+    ignore_errors: yes
 
   - name: Disable RHN yum Plugin
     lineinfile:
