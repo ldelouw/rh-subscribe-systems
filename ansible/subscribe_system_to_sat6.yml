@@ -9,25 +9,39 @@
      state: present
      name: subscription-manager
 
-  - name: Unregister from old Satellite 6 (May fail if registred to Sat5)
+  - name: Check if the system is registered to a Sat5)
+    stat:
+      path: /etc/sysconfig/rhn/systemid
+    register: stat_result
+
+  - name: Check if system is subscribed to Sat6 or CDN
+    shell: subscription-manager status
+    register: subs
+    #ignore_errors: True
+    changed_when: subs.rc == 2000
+    failed_when: subs.rc == 2000
+
+  - name: Unregister from old Satellite 6 or Red Hat CDN, skip if Sat5 registered or not registred at all
     redhat_subscription:
       state: absent
-    ignore_errors: yes
+    when: stat_result.stat.exists == False or subs.rc == 0
 
-  - name: Remove old Katello config and certs
-    shell: "rpm -e katello-ca-consumer*"
-    ignore_errors: yes
+  - name: Check for existing katello-ca-consumer package, remove it when exist
+    package: 
+      name: katello-ca-consumer*
+      state: absent
 
-  - name: Disable RHN yum Plugin
+  - name: Check if /etc/yum/pluginconf.d/rhnplugin.conf exists
+    stat:
+      path: /etc/sysconfig/rhn/systemid
+    register: stat_result
+
+  - name: Disable RHN yum Plugin if rhnplugin.conf exists
     lineinfile:
       path: /etc/yum/pluginconf.d/rhnplugin.conf
       regexp: '^enabled'
       line: 'enabled=0'
-
-  - name: Check if /etc/sysconfig/rhn/systemid exists
-    stat:
-      path: /etc/sysconfig/rhn/systemid
-    register: stat_result
+    when: stat_result.stat.exists == True
 
   - name: Backup /etc/sysconfig/rhn/systemid
     copy: 
@@ -45,8 +59,7 @@
     lineinfile:
       path: /etc/yum.conf
       state: absent
-      # regexp: '^proxy=http://proxy.example.com:3128'
-      regexp: '^proxy=http://proxy.example.com:3128'
+      regexp: '^proxy=http://{{ proxy_host }}:{{ proxy_port }}'
 
   - name: Install new Katello Config and Cert RPM
     yum:
@@ -54,7 +67,19 @@
       disable_gpg_check: yes
       name: http://{{ capsule }}/pub/katello-ca-consumer-latest.noarch.rpm
 
-  - name: Register the machines to RHSM
+  - name: Remove proxy host entry from /etc/rhsm/rhsm.conf
+    lineinfile:
+      path: /etc/rhsm/rhsm.conf
+      state: absent
+      regexp: '^proxy_hostname={ proxy_host }'
+
+  - name: Remove proxy port entry from /etc/rhsm/rhsm.conf
+    lineinfile:
+      path: /etc/rhsm/rhsm.conf
+      state: absent
+      regexp: '^proxy_port={ proxy_port }'
+
+  - name: Register the machine to Satellite 6
     ignore_errors: yes
     redhat_subscription:
       state: present
@@ -62,11 +87,13 @@
       org_id: '{{ organization }}'
       auto_attach: true
 
-  - name: Register the machines to RHSM via shell - step auto-attach
+  - name: Run auto-attach as a workaround for a bug
     shell: subscription-manager attach --auto
 
   - name: Cleanup Yum cache
     shell: yum clean all
+    args:
+      warn: no
 
   - name: Remove obsolete Yum Cache Directory
     file:
@@ -76,7 +103,7 @@
 #  - name: Install Custom GPG Key
 #    rpm_key:
 #      state: present
-#      key: http://sat6.example.com/pub/RPM-GPG-KEY-example
+#      key: http://{{ capsule }}/pub/RPM-GPG-KEY-example
 
   - name: Install Katello Agent
     yum:
