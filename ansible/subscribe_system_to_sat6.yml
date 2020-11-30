@@ -4,10 +4,10 @@
     - ./vars.yml
 
   tasks:
-  - name: Ensure Subscription Manager is installed
-    yum:
-     state: present
-     name: subscription-manager
+#  - name: Ensure Subscription Manager is installed
+#    yum:
+#     state: present
+#     name: subscription-manager
 
   - name: Check if the system is registered to a Sat5)
     stat:
@@ -33,7 +33,7 @@
 
   - name: Check if /etc/yum/pluginconf.d/rhnplugin.conf exists
     stat:
-      path: /etc/sysconfig/rhn/systemid
+      path: /etc/yum/pluginconf.d/rhnplugin.conf
     register: stat_result
 
   - name: Disable RHN yum Plugin if rhnplugin.conf exists
@@ -55,11 +55,13 @@
       path: /etc/sysconfig/rhn/systemid
       state: absent
 
-  - name: remove proxy entry from /etc/yum.conf
-    lineinfile:
-      path: /etc/yum.conf
-      state: absent
-      regexp: '^proxy=http://{{ proxy_host }}:{{ proxy_port }}'
+#  - name: remove proxy entry from /etc/yum.conf
+#    lineinfile:
+#      path: /etc/yum.conf
+#      state: absent
+#      regexp: '^proxy=http://{{ proxy_host }}:{{ proxy_port }}'
+#      tags:
+#        - proxy
 
   - name: Install new Katello Config and Cert RPM
     yum:
@@ -67,17 +69,24 @@
       disable_gpg_check: yes
       name: http://{{ capsule }}/pub/katello-ca-consumer-latest.noarch.rpm
 
-  - name: Remove proxy host entry from /etc/rhsm/rhsm.conf
-    lineinfile:
-      path: /etc/rhsm/rhsm.conf
-      state: absent
-      regexp: '^proxy_hostname={ proxy_host }'
+  - name: Run subscription-manager clean for cleanup stuff incl. SSL certs
+    shell: subscription-manager clean
 
-  - name: Remove proxy port entry from /etc/rhsm/rhsm.conf
-    lineinfile:
-      path: /etc/rhsm/rhsm.conf
-      state: absent
-      regexp: '^proxy_port={ proxy_port }'
+#  - name: Remove proxy host entry from /etc/rhsm/rhsm.conf
+#    lineinfile:
+#      path: /etc/rhsm/rhsm.conf
+#      state: absent
+#      regexp: '^proxy_hostname={ proxy_host }'
+#      tags:
+#        - proxy
+
+#  - name: Remove proxy port entry from /etc/rhsm/rhsm.conf
+#    lineinfile:
+#      path: /etc/rhsm/rhsm.conf
+#      state: absent
+#      regexp: '^proxy_port={ proxy_port }'
+#      tags:
+#        - proxy
 
   - name: Register the machine to Satellite 6
     ignore_errors: yes
