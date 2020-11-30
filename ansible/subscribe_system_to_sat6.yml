@@ -14,6 +14,13 @@
       path: /etc/sysconfig/rhn/systemid
     register: stat_result
 
+  - name: Backup /etc/sysconfig/rhn/systemid
+    copy: 
+      remote_src=True 
+      src=/etc/sysconfig/rhn/systemid
+      dest=/etc/sysconfig/rhn/systemid.backup
+    when: stat_result.stat.exists == True
+
   - name: Check if system is subscribed to Sat6 or CDN
     shell: subscription-manager status
     register: subs
@@ -41,13 +48,6 @@
       path: /etc/yum/pluginconf.d/rhnplugin.conf
       regexp: '^enabled'
       line: 'enabled=0'
-    when: stat_result.stat.exists == True
-
-  - name: Backup /etc/sysconfig/rhn/systemid
-    copy: 
-      remote_src=True 
-      src=/etc/sysconfig/rhn/systemid
-      dest=/etc/sysconfig/rhn/systemid.backup
     when: stat_result.stat.exists == True
 
   - name: Move /etc/sysconfig/rhn/systemid
