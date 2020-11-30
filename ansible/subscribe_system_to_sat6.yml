@@ -4,10 +4,10 @@
     - ./vars.yml
 
   tasks:
-#  - name: Ensure Subscription Manager is installed
-#    yum:
-#     state: present
-#     name: subscription-manager
+  - name: Ensure Subscription Manager is installed
+    yum:
+     state: present
+     name: subscription-manager
 
   - name: Check if the system is registered to a Sat5)
     stat:
