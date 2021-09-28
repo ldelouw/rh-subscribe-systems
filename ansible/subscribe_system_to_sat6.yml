@@ -50,6 +50,18 @@
       line: 'enabled=0'
     when: stat_result.stat.exists == True
 
+  - name: Check if /etc/yum/pluginconf.d/spacewalk.conf exists
+    stat:
+      path: /etc/yum/pluginconf.d/spacewalk.conf
+    register: stat_result
+
+  - name: Disable RHN yum Plugin if spacewalk.conf exists
+    lineinfile:
+      path: /etc/yum/pluginconf.d/spacewalk.conf
+      regexp: '^enabled'
+      line: 'enabled=0'
+    when: stat_result.stat.exists == True
+
   - name: Move /etc/sysconfig/rhn/systemid
     file:
       path: /etc/sysconfig/rhn/systemid
