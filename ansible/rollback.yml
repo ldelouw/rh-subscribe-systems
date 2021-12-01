@@ -12,10 +12,10 @@
   - name: Unregister from Satellite 6
     redhat_subscription:
       state: absent
-    ignore_errors: True
+    ignore_errors: true
 
   - name: Check for existing katello-ca-consumer package, remove it when exist
-    package: 
+    package:
       name: katello-ca-consumer*
       state: absent
 
@@ -29,7 +29,7 @@
       path: /etc/yum/pluginconf.d/rhnplugin.conf
       regexp: '^enabled'
       line: 'enabled=1'
-    when: stat_result.stat.exists == True
+    when: stat_result.stat.exists
 
   - name: Check Sat5 systemid backup file)
     stat:
@@ -37,21 +37,21 @@
     register: stat_result
 
   - name: Restore /etc/sysconfig/rhn/systemid
-    copy: 
-      remote_src=True 
-      src=/etc/sysconfig/rhn/systemid.backup
-      dest=/etc/sysconfig/rhn/systemid
-    when: stat_result.stat.exists == True
+    copy:
+      remote_src: true
+      src: /etc/sysconfig/rhn/systemid.backup
+      dest: /etc/sysconfig/rhn/systemid
+      mode: "0644"
+    when: stat_result.stat.exists
 
   - name: Disable RHSM plugin
     lineinfile:
       path: /etc/yum/pluginconf.d/subscription-manager.conf
       regexp: '^enabled'
       line: 'enabled=0'
-    when: stat_result.stat.exists == True
+    when: stat_result.stat.exists
 
   - name: Remove obsolete Yum Cache Directory
     file:
       path: /var/cache/yum
       state: absent
-
