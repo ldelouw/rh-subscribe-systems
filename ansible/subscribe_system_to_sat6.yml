@@ -71,7 +71,7 @@
   - name: "Remove line with disable_system_repos if it exists"
     lineinfile:
       path: /etc/yum/pluginconf.d/subscription-manager.conf
-      regexp: '^enabled'
+      regexp: '^disable_system_repos'
       state: absent
 
   - name: "Move /etc/sysconfig/rhn/systemid"
