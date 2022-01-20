@@ -4,6 +4,13 @@
     - ./vars.yml
 
   tasks:
+
+  - name: Deploy SSH public key for the foreman-proxy user
+    authorized_key:
+      key: "{{ lookup('file', '/usr/share/foreman-proxy/.ssh/id_rsa_foreman_proxy.pub') }}"
+      user: root
+      state: present
+
   - name: "Ensure Subscription Manager is installed"
     yum:
      state: present
