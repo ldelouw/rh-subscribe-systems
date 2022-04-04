@@ -1,0 +1,151 @@
+---
+- hosts: all
+  vars_files:
+    - ./vars.yml
+
+  tasks:
+
+  - name: Deploy SSH public key for the foreman-proxy user
+    authorized_key:
+      key: "{{ lookup('file', '/usr/share/foreman-proxy/.ssh/id_rsa_foreman_proxy.pub') }}"
+      user: root
+      state: present
+
+  - name: "Ensure Subscription Manager is installed"
+    yum:
+     state: present
+     name: subscription-manager
+
+  - name: "Check if the system is registered to a Sat5"
+    stat:
+      path: /etc/sysconfig/rhn/systemid
+    register: stat_result
+
+  - name: "Backup /etc/sysconfig/rhn/systemid"
+    copy:
+      remote_src=true
+      src=/etc/sysconfig/rhn/systemid
+      dest=/etc/sysconfig/rhn/systemid.backup
+    when: stat_result.stat.exists == true
+
+  - name: "Check if system is subscribed to Sat6 or CDN"
+    shell: subscription-manager status
+    register: subs
+    # ignore_errors: True
+    changed_when: subs.rc == 2000
+    failed_when: subs.rc == 2000
+
+  - name: "Unregister from old Satellite 6 or Red Hat CDN, skip if Sat5 registered or not registred at all"
+    redhat_subscription:
+      state: absent
+    when: stat_result.stat.exists == False or subs.rc == 0
+
+  - name: "Check for existing katello-ca-consumer package, remove it when exist"
+    package:
+      name: katello-ca-consumer*
+      state: absent
+
+  - name: "Check if /etc/yum/pluginconf.d/rhnplugin.conf exists"
+    stat:
+      path: /etc/yum/pluginconf.d/rhnplugin.conf
+    register: stat_result
+
+  - name: "Disable RHN yum Plugin if rhnplugin.conf exists"
+    lineinfile:
+      path: /etc/yum/pluginconf.d/rhnplugin.conf
+      regexp: '^enabled'
+      line: 'enabled=0'
+    when: stat_result.stat.exists
+
+  - name: "Check if /etc/yum/pluginconf.d/spacewalk.conf exists"
+    stat:
+      path: /etc/yum/pluginconf.d/spacewalk.conf
+    register: stat_result
+
+  - name: "Disable RHN yum Plugin if spacewalk.conf exists"
+    lineinfile:
+      path: /etc/yum/pluginconf.d/spacewalk.conf
+      regexp: '^enabled'
+      line: 'enabled=0'
+    when: stat_result.stat.exists
+
+  - name: "Enable subscription-manager Plugin if its disabled"
+    lineinfile:
+      path: /etc/yum/pluginconf.d/subscription-manager.conf
+      regexp: '^enabled'
+      line: 'enabled=1'
+
+  - name: "Remove line with disable_system_repos if it exists"
+    lineinfile:
+      path: /etc/yum/pluginconf.d/subscription-manager.conf
+      regexp: '^disable_system_repos'
+      state: absent
+
+  - name: "Move /etc/sysconfig/rhn/systemid"
+    file:
+      path: /etc/sysconfig/rhn/systemid
+      state: absent
+
+#  - name: remove proxy entry from /etc/yum.conf
+#    lineinfile:
+#      path: /etc/yum.conf
+#      state: absent
+#      regexp: '^proxy=http://{{ proxy_host }}:{{ proxy_port }}'
+#      tags:
+#        - proxy
+
+  - name: "Install new Katello Config and Cert RPM"
+    yum:
+      state: present
+      disable_gpg_check: true
+      name: http://{{ capsule }}/pub/katello-ca-consumer-latest.noarch.rpm
+
+  - name: "Run subscription-manager clean for cleanup stuff incl. SSL certs"
+    shell: subscription-manager clean
+
+#  - name: Remove proxy host entry from /etc/rhsm/rhsm.conf
+#    lineinfile:
+#      path: /etc/rhsm/rhsm.conf
+#      state: absent
+#      regexp: '^proxy_hostname={ proxy_host }'
+#      tags:
+#        - proxy
+
+#  - name: Remove proxy port entry from /etc/rhsm/rhsm.conf
+#    lineinfile:
+#      path: /etc/rhsm/rhsm.conf
+#      state: absent
+#      regexp: '^proxy_port={ proxy_port }'
+#      tags:
+#        - proxy
+
+  - name: "Register the machine to Satellite 6"
+    ignore_errors: true
+    redhat_subscription:
+      state: present
+      activationkey: '{{ activationkey }}'
+      org_id: '{{ organization }}'
+      auto_attach: true
+
+  - name: "Run auto-attach as a workaround for a bug"
+    shell: subscription-manager attach --auto
+
+  - name: "Cleanup Yum cache"
+    shell: yum clean all
+    args:
+      warn: false
+
+  - name: "Remove obsolete Yum Cache Directory"
+    file:
+      path: /var/cache/yum
+      state: absent
+
+#  - name: "Install Custom GPG Key"
+#    rpm_key:
+#      state: present
+#      key: http://{{ capsule }}/pub/RPM-GPG-KEY-example
+
+  - name: "Install Katello Agent"
+    yum:
+      state: latest
+      name: katello-agent
