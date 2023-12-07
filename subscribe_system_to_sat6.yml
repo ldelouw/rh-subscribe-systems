@@ -103,21 +103,23 @@
   - name: "Run subscription-manager clean for cleanup stuff incl. SSL certs"
     shell: subscription-manager clean
 
-#  - name: Remove proxy host entry from /etc/rhsm/rhsm.conf
-#    lineinfile:
-#      path: /etc/rhsm/rhsm.conf
-#      state: absent
-#      regexp: '^proxy_hostname={ proxy_host }'
-#      tags:
-#        - proxy
+  - name: Remove proxy host entry from /etc/rhsm/rhsm.conf
+    lineinfile:
+      path: /etc/rhsm/rhsm.conf
+      state: absent
+      regexp: '^proxy_hostname={ proxy_host }'
+    when: proxy_host is defined
+    tags:
+        - proxy
 
-#  - name: Remove proxy port entry from /etc/rhsm/rhsm.conf
-#    lineinfile:
-#      path: /etc/rhsm/rhsm.conf
-#      state: absent
-#      regexp: '^proxy_port={ proxy_port }'
-#      tags:
-#        - proxy
+  - name: Remove proxy port entry from /etc/rhsm/rhsm.conf
+    lineinfile:
+      path: /etc/rhsm/rhsm.conf
+      state: absent
+      regexp: '^proxy_port={ proxy_port }'
+    when: proxy_port is defined
+    tags:
+        - proxy
 
   - name: "Register the machine to Satellite 6"
     ignore_errors: true
@@ -125,15 +127,12 @@
       state: present
       activationkey: '{{ activationkey }}'
       org_id: '{{ organization }}'
-      auto_attach: true
 
   - name: "Run auto-attach as a workaround for a bug"
     shell: subscription-manager attach --auto
 
   - name: "Cleanup Yum cache"
     shell: yum clean all
-    args:
-      warn: false
 
   - name: "Remove obsolete Yum Cache Directory"
     file:
