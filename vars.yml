@@ -1,5 +1,0 @@
-capsule: sat6.example.com
-activationkey: rhel7-generic-test
-organization: Default_Organization
-proxy_host: proxy.example.com
-proxy_port: 3128
