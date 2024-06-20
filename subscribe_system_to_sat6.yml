@@ -143,8 +143,3 @@
 #    rpm_key:
 #      state: present
 #      key: http://{{ capsule }}/pub/RPM-GPG-KEY-example
-
-  - name: "Install Katello Agent"
-    yum:
-      state: latest
-      name: katello-agent
