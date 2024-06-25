@@ -145,6 +145,11 @@
       path: /var/cache/yum
       state: absent
 
+  - name: "Install the katello-host-tools-tracer package"
+    package:
+      name: katello-host-tools-tracer
+      state: present
+
 #  - name: "Install Custom GPG Key"
 #    rpm_key:
 #      state: present
