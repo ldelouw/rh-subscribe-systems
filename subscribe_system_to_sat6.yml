@@ -45,6 +45,12 @@
       name: katello-ca-consumer*
       state: absent
 
+  # This applies only to clients hosted on azure to be migrated to Satellite
+  - name: "Check for existing rhui-azure package, remove it when exist"
+    package:
+      name: rhui-azure*
+      state: absent
+
   - name: "Check if /etc/yum/pluginconf.d/rhnplugin.conf exists"
     stat:
       path: /etc/yum/pluginconf.d/rhnplugin.conf
