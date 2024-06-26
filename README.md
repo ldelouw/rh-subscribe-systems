@@ -4,8 +4,8 @@ This playbook is the universal tool to subscribe existing or new systems to a Sa
 
 The following use cases are covered:
 * System is not subscribed at all and needs to registred to a Satellite Server
-* System is subscribed to a medival Satellite 5.x system which is not supported anymore since years and needs to be migrated to a recent Satellite 6 server
-* System is subscribed to another Satellite 6 and needs to be migrated to another Satellite
+* System is subscribed to a medieval Satellite 5.x system which is not supported anymore since years and needs to be migrated to a recent Satellite 6 server
+* System is subscribed to a Satellite 6 and needs to be migrated to another Satellite
 * System is subscribed to the Red Hat CDN and needs to be migrated to a Satellite 6 server
 * System can be put into a hostgroup and an initial Ansible Play can be triggered to apply the roles defined in the hostgroup 
 
