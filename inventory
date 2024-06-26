@@ -1,3 +1,13 @@
-[servers]
-server1.example.com
-server2.example.com
+[rhel9]
+1234test.example.com
+
+[rhel9:vars]
+activationkey=ak-rhel9-generic-prod
+hostgroup=BER/prod/generic/rhel9
+
+[rhel8]
+node1.example.net
+
+[rhel8:vars]
+activationkey=ak-rhel8-generic-prod
+hostgroup=BER/prod/generic/rhel8

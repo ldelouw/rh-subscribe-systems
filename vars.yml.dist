@@ -1,13 +1,21 @@
 # Provide Satellite or Capsule to
 # be used for registeration
-capsule: sat6.example.com
+# Capsule and Satellite can be the same, if you are using 
+# dedicated Capsules they are diffferent
+capsule_hostname: sat.example.com
+sat_hostname: sat.example.com
+sat_url: "https://{{ sat_hostname }}"
 
 # Activation key to be used for the registration 
 # of hosts defined in the inventory
-activationkey: rhel7-generic-test
+# activationkey: ak-rhel9-generic-prod
+# See inventory file
 
 # Your Organizations name as configured in the Satellite
-organization: Default_Organization
+organization: lab
+
+sat_user: admin
+#sat_passwd: see vault file passwd.yml
 
 # If your rhsm.conf contains a proxy server
 # it will most probably fail to register

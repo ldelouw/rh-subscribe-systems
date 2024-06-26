@@ -2,6 +2,7 @@
 - hosts: all
   vars_files:
     - ./vars.yml
+    - ./passwd.yml
 
   tasks:
 
@@ -12,9 +13,8 @@
       state: present
 
   - name: "Ensure Subscription Manager is installed"
-    yum:
-     state: present
-     name: subscription-manager
+    shell: rpm -qi subscription-manager
+    ignore_errors: True
 
   - name: "Check if the system is registered to a Sat5"
     stat:
@@ -40,16 +40,9 @@
       state: absent
     when: stat_result.stat.exists == False or subs.rc == 0
 
-  - name: "Check for existing katello-ca-consumer package, remove it when exist"
-    package:
-      name: katello-ca-consumer*
-      state: absent
-
-  # This applies only to clients hosted on azure to be migrated to Satellite
-  - name: "Check for existing rhui-azure package, remove it when exist"
-    package:
-      name: rhui-azure*
-      state: absent
+  - name: "Check for existing katello-ca-consumer package, remove it when it exist"
+    shell: rpm -e $(rpm -qa|grep katello-ca-consumer)
+    ignore_errors: true
 
   - name: "Check if /etc/yum/pluginconf.d/rhnplugin.conf exists"
     stat:
@@ -101,10 +94,7 @@
 #        - proxy
 
   - name: "Install new Katello Config and Cert RPM"
-    yum:
-      state: present
-      disable_gpg_check: true
-      name: http://{{ capsule }}/pub/katello-ca-consumer-latest.noarch.rpm
+    shell: rpm -i http://{{ capsule_hostname }}/pub/katello-ca-consumer-latest.noarch.rpm
 
   - name: "Run subscription-manager clean for cleanup stuff incl. SSL certs"
     shell: subscription-manager clean
@@ -145,10 +135,38 @@
       path: /var/cache/yum
       state: absent
 
+  # This applies only to clients hosted on Azure to be migrated to Satellite
+  - name: "Check for existing rhui-azure package, remove it when it exist"
+    package:
+      name: rhui-azure*
+      state: absent
+    ignore_errors: true
+
   - name: "Install the katello-host-tools-tracer package"
     package:
       name: katello-host-tools-tracer
       state: present
+
+  - name: "Assign the host to a Hostgroup"
+    redhat.satellite.host:
+      username: "{{ sat_user }}"
+      password: "{{ sat_passwd }}"
+      server_url: "{{ sat_url }}"
+      name: "{{ inventory_hostname }}"
+      hostgroup: "{{ hostgroup }}"
+      state: present
+    when: hostgroup is defined
+
+  - name: "Trigger Ansible play for the host"
+    redhat.satellite.job_invocation:
+      username: "{{ sat_user }}"
+      password: "{{ sat_passwd }}"
+      server_url: "{{ sat_url }}"
+      search_query: "name ^ ({{ inventory_hostname }})"
+      job_template: "Ansible Roles - Ansible Default"
+    when: hostgroup is defined
+    tags: job
+       
 
 #  - name: "Install Custom GPG Key"
 #    rpm_key:
