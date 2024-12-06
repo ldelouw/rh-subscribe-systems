@@ -8,6 +8,7 @@ The following use cases are covered:
 * System is subscribed to a Satellite 6 and needs to be migrated to another Satellite
 * System is subscribed to the Red Hat CDN and needs to be migrated to a Satellite 6 server
 * System can be put into a hostgroup and an initial Ansible Play can be triggered to apply the roles defined in the hostgroup 
+* SSH remote execution SSH public key of the Satellite or Capsule (depending where you run the playbook, Satellite or Capusle) will be deployed on the target systems
 
 In the case of CDN or a previous subscription to another Satellite, the systems are unregistred to not have a double usage of subscriptions. However, it does *not* unsubscribe the system from the Satellite 5, in the case of a problem there is an easy backout plan.
 
@@ -21,7 +22,7 @@ If you want to contribute to this playbook, just clone and send me a pull reques
 
 # Requirements
 
-The only requirement is to have subscription-manager installed, otherwise there will be a chicken and egg problem. Well, of course you need to have an Ansible Control Node which can be the Satellite itself, which is recommended.
+The only requirement is to have subscription-manager installed, otherwise there will be a chicken and egg problem. Well, of course you need to have an Ansible Control Node needs to be the Satellite itself, or a Capsule Server. In the later case, you need to install the Satellite Ansible collection with *dnf install ansible-collection-redhat-satellite.noarch ansible-collection-redhat-satellite_operations.noarch*
 
 ## Usage
 
